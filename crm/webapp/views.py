@@ -3,6 +3,9 @@ from django.shortcuts import render, redirect
 from .forms import CreateUserForm, LoginForm
 from django.contrib.auth.models import auth
 from django.contrib.auth import authenticate
+from django.contrib.auth.decorators import login_required
+
+from . models import Record
 
 # - Home Page
 
@@ -23,8 +26,8 @@ def register(request):
         if form.is_valid():
             form.save()
 
-            return redirect('login') 
-        
+            return redirect('login')
+
     context = {'form': form}
 
     return render(request, 'webapp/register.html', context=context)
@@ -48,13 +51,29 @@ def login(request):
             if user is not None:
                 auth.login(request, user)
 
-                # return redirect('')  # Dashboard
+                return redirect('dashboard')  # Dashboard
 
     context = {'form': form}
 
     return render(request, 'webapp/login.html', context=context)
 
- # - User logout
+# - Dashboard
+@login_required(login_url='login')
+def dashboard(request):
+
+    cust_records = Record.objects.all()
+
+    user_name = None
+    if request.user.is_authenticated:
+        user_name = request.user.username
+
+    context = {'records': cust_records,
+               'user_name': user_name,
+               }
+
+    return render(request, 'webapp/dashboard.html', context=context)
+
+# - User logout
 def logout(request):
 
     auth.logout(request)
